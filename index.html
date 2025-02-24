@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dictation App Launcher</title>
+    <title>Redirecting to Dictation App</title>
+    <!-- Meta refresh to redirect immediately (0 seconds) -->
+    <meta http-equiv="refresh" content="0; url=dictation-app.html">
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
         }
-        a {
-            font-size: 24px;
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
+        p {
+            font-size: 18px;
+            color: #666;
         }
     </style>
 </head>
 <body>
-    <h1>Welcome to the Dictation App</h1>
-    <p>Click below to start the app for your kids' daily dictation practice!</p>
-    <a href="dictation-app.html">Launch Dictation App</a>
+    <p>Redirecting to the Dictation App... If it doesn’t load, <a href="dictation-app.html">click here</a>.</p>
+    <!-- JavaScript fallback redirect -->
+    <script>
+        window.location.href = "dictation-app.html";
+    </script>
 </body>
 </html>
