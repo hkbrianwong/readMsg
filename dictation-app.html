@@ -58,6 +58,26 @@
         .translate-btn:hover {
             background-color: #0056b3;
         }
+        #saved-passages {
+            margin-top: 20px;
+        }
+        .saved-passage {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -66,7 +86,10 @@
     <button onclick="processPassage()">Break into Sentences</button>
     <button onclick="readAll()">Read All</button>
     <button onclick="resetApp()">Reset</button>
+    <button onclick="savePassage()">Save Passage</button>
+    <button onclick="loadSavedPassages()">Load Saved Passages</button>
     <div id="sentences"></div>
+    <div id="saved-passages"></div>
 
     <script>
         // Load available voices
@@ -86,7 +109,7 @@
         loadVoices();
 
         // Function to translate using Google Translate via CORS proxy
-        async function translateToChinese(sentence, translationDiv) {
+           async function translateToChinese(sentence, translationDiv) {
     translationDiv.textContent = 'Translating...';
     try {
         const googleTranslateUrl = `https://translate.google.com/m?hl=en&sl=en&tl=zh-TW&q=${encodeURIComponent(sentence.trim())}`;
@@ -163,7 +186,7 @@
 
                     const translationDiv = document.createElement('div');
                     translationDiv.className = 'translation';
-                    translationDiv.textContent = ''; // Initially empty
+                    translationDiv.textContent = '';
 
                     sentenceDiv.appendChild(sentenceTextDiv);
                     sentenceDiv.appendChild(translationDiv);
@@ -231,7 +254,61 @@
         function resetApp() {
             document.getElementById('passage').value = '';
             document.getElementById('sentences').innerHTML = '';
-            window.speechSynthesis.cancel(); // Stop any ongoing speech
+            window.speechSynthesis.cancel();
+        }
+
+        // New Functions for Saving, Loading, and Deleting Passages
+
+        function savePassage() {
+            const passage = document.getElementById('passage').value.trim();
+            if (!passage) {
+                alert('No passage to save!');
+                return;
+            }
+            const date = new Date().toISOString().split('T')[0]; // e.g., "2024-10-20"
+            const key = `passage_${date}_${Date.now()}`; // Unique key with date and timestamp
+            localStorage.setItem(key, passage);
+            alert('Passage saved successfully!');
+        }
+
+        function loadSavedPassages() {
+            const savedPassagesDiv = document.getElementById('saved-passages');
+            savedPassagesDiv.innerHTML = '<h3>Saved Passages</h3>';
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('passage_')) {
+                    const passage = localStorage.getItem(key);
+                    const date = key.split('_')[1]; // Extract date from key
+
+                    const passageDiv = document.createElement('div');
+                    passageDiv.className = 'saved-passage';
+
+                    const text = document.createElement('span');
+                    text.textContent = `${date}: ${passage.substring(0, 30)}...`; // Show first 30 chars
+
+                    const loadBtn = document.createElement('button');
+                    loadBtn.textContent = 'Load';
+                    loadBtn.onclick = () => {
+                        document.getElementById('passage').value = passage;
+                        // Uncomment the next line if you want to auto-process the passage
+                        // processPassage();
+                    };
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = () => {
+                        localStorage.removeItem(key);
+                        loadSavedPassages(); // Refresh list
+                    };
+
+                    passageDiv.appendChild(text);
+                    passageDiv.appendChild(loadBtn);
+                    passageDiv.appendChild(deleteBtn);
+                    savedPassagesDiv.appendChild(passageDiv);
+                }
+            }
         }
     </script>
 </body>
