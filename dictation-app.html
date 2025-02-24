@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictation App for Kids</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        #sentences {
+            margin-top: 20px;
+        }
+        .sentence {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .speaker {
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Daily Dictation App</h1>
+    <textarea id="passage" placeholder="Paste your passage here..."></textarea>
+    <button onclick="processPassage()">Break into Sentences</button>
+    <button onclick="readAll()">Read All</button>
+    <div id="sentences"></div>
+
+    <script>
+        // Load available voices
+        let voices = [];
+        function loadVoices() {
+            voices = speechSynthesis.getVoices();
+            const femaleVoice = voices.find(voice => 
+                voice.name.toLowerCase().includes('female') || 
+                voice.name.toLowerCase().includes('samantha') || 
+                voice.name.toLowerCase().includes('victoria') || 
+                voice.lang.includes('en')
+            );
+            return femaleVoice || voices[0]; // Fallback to first voice
+        }
+
+        speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); // Initial call
+
+        // Replace punctuation with spoken words
+        function addSpokenPunctuation(text) {
+            return text
+                .replace(/,/g, ' comma ')
+                .replace(/\./g, ' period ')
+                .replace(/\!/g, ' exclamation mark ')
+                .replace(/\?/g, ' question mark ')
+                .replace(/;/g, ' semicolon ')
+                .replace(/:/g, ' colon ')
+                .replace(/-/g, ' dash ');
+        }
+
+        // Split sentence into phrases based on punctuation
+        function splitIntoPhrases(sentence) {
+            // Split on major punctuation but keep the punctuation in the phrases
+            return sentence.split(/(?<=[.,!?;:])/).map(phrase => phrase.trim()).filter(phrase => phrase);
+        }
+
+        function processPassage() {
+            const passage = document.getElementById('passage').value.trim();
+            if (!passage) {
+                alert('Please paste a passage first!');
+                return;
+            }
+
+            const sentences = passage.match(/[^.!?]+[.!?]+/g) || [passage];
+            const sentencesDiv = document.getElementById('sentences');
+            sentencesDiv.innerHTML = ''; // Clear previous content
+
+            sentences.forEach((sentence, index) => {
+                sentence = sentence.trim();
+                if (sentence) {
+                    const sentenceDiv = document.createElement('div');
+                    sentenceDiv.className = 'sentence';
+
+                    const speaker = document.createElement('span');
+                    speaker.className = 'speaker';
+                    speaker.innerHTML = '🔊';
+                    speaker.onclick = () => readSentence(sentence);
+
+                    const text = document.createElement('span');
+                    text.textContent = sentence;
+
+                    sentenceDiv.appendChild(speaker);
+                    sentenceDiv.appendChild(text);
+                    sentencesDiv.appendChild(sentenceDiv);
+                }
+            });
+        }
+
+        function readSentence(sentence) {
+            const phrases = splitIntoPhrases(sentence);
+            let queue = [];
+            phrases.forEach(phrase => {
+                const spokenPhrase = addSpokenPunctuation(phrase);
+                const speech = new SpeechSynthesisUtterance(spokenPhrase);
+                const femaleVoice = loadVoices();
+                speech.voice = femaleVoice;
+                speech.rate = 0.5; // Slow speed
+                speech.pitch = 1;
+                speech.volume = 1;
+                queue.push(speech);
+            });
+
+            // Play phrases with a 1-second pause between them
+            function playNext(index) {
+                if (index < queue.length) {
+                    queue[index].onend = () => setTimeout(() => playNext(index + 1), 1000); // 1-second pause
+                    window.speechSynthesis.speak(queue[index]);
+                }
+            }
+            playNext(0);
+        }
+
+        function readAll() {
+            const sentencesDiv = document.getElementById('sentences');
+            const sentences = Array.from(sentencesDiv.getElementsByClassName('sentence'));
+            if (sentences.length === 0) {
+                alert('Please break the passage into sentences first!');
+                return;
+            }
+
+            let fullQueue = [];
+            sentences.forEach(sentenceDiv => {
+                const sentenceText = sentenceDiv.querySelector('span:nth-child(2)').textContent;
+                const phrases = splitIntoPhrases(sentenceText);
+                phrases.forEach(phrase => {
+                    const spokenPhrase = addSpokenPunctuation(phrase);
+                    const speech = new SpeechSynthesisUtterance(spokenPhrase);
+                    const femaleVoice = loadVoices();
+                    speech.voice = femaleVoice;
+                    speech.rate = 0.5; // Slow speed
+                    speech.pitch = 1;
+                    speech.volume = 1;
+                    fullQueue.push(speech);
+                });
+            });
+
+            // Play all phrases with a 1-second pause between them
+            function playNext(index) {
+                if (index < fullQueue.length) {
+                    fullQueue[index].onend = () => setTimeout(() => playNext(index + 1), 1000); // 1-second pause
+                    window.speechSynthesis.speak(fullQueue[index]);
+                }
+            }
+            playNext(0);
+        }
+    </script>
+</body>
+</html>
